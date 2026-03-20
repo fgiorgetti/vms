@@ -304,14 +304,52 @@ export async function DeleteDeployment(name) {
 export async function GetSites() {
   let list = await customApi.listNamespacedCustomObject({
     group: "skupper.io",
-    version: "/v2alpha1",
+    version: "v2alpha1",
     namespace: namespace,
     plural: "sites",
   })
   return list.items
 }
 
-const secretWatches = []
+export async function GetNetworkAccesses() {
+  let list = await customApi.listNamespacedCustomObject({
+    group: "skupper.io",
+    version: "v2alpha1",
+    namespace: namespace,
+    plural: "networkaccesses",
+  })
+  return list.items
+}
+
+export async function GetRouterAccesses() {
+  let list = await customApi.listNamespacedCustomObject({
+    group: "skupper.io",
+    version: "v2alpha1",
+    namespace: namespace,
+    plural: "routeraccesses",
+  })
+  return list.items
+}
+
+export async function DeleteSkupperResource(plural, name) {
+  await customApi.deleteNamespacedCustomObject({
+    group: "skupper.io",
+    version: "v2alpha1",
+    namespace: namespace,
+    plural: plural,
+    name: name,
+  })
+}
+
+export async function DeleteRouterAccess(name) {
+  await DeleteSkupperResource("routeraccesses", name)
+}
+
+export async function DeleteNetworkAccess(name) {
+  await DeleteSkupperResource("networkaccesses", name)
+}
+
+var secretWatches = []
 
 const startWatchSecrets = function () {
   secretWatch.watch(

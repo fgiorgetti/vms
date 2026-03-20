@@ -308,31 +308,55 @@ const on_secret_watch = async function(kind, obj) {
         // An update occurred that affects an access-point.  First, sync the secrets to update the SslProfiles,
         // then sync the Listeners in case SslProfile changes affect Listener configuration.
         //
-        await sync_secrets();
-        await sync_listeners();
+        //await sync_secrets();
+        //await sync_listeners();
+        console.log('on_secret_watch: INJECT_TYPE_ACCESS_POINT: access-point')
     } else if (inject_type == INJECT_TYPE_SITE) {
         //
         // The site client certificate has bee updated.  Sync the secrets to ensure the SslProfiles are up to date.
         //
-        await sync_secrets();
+        // await sync_secrets();
+        console.log('on_secret_watch: INJECT_TYPE_SITE: site client certificate')
     }
 }
 
 const on_configmap_watch = async function(kind, obj) {
     const state_type = Annotation(obj, META_ANNOTATION_STATE_TYPE);
     if (state_type == STATE_TYPE_ACCESS_POINT) {
-        await sync_listeners();
+        // await sync_listeners();
+        console.log('on_configmap_watch: STATE_TYPE_ACCESS_POINT');
     } else if (state_type == STATE_TYPE_LINK) {
-        await sync_connectors();
+        // await sync_connectors();
+        console.log('on_configmap_watch: STATE_TYPE_LINK');
     }
 }
 
 const start_sync_loop = async function () {
     Log('Link module sync-loop starting');
-    await sync_secrets();
-    await sync_listeners();
-    await sync_connectors();
-    WatchSecrets(on_secret_watch);
+
+    // - Manages the list of sslProfiles based on secrets annotated with: skx/tls-inject
+    // - If a secret is provided by the management controller, I believe it might affect
+    //   the lifecycle of NetworkAccess, RouterAccess, NetworkLink or Link resources
+    //   as the Site Controller won't touch the Router API directly.
+    // await sync_secrets(); - DISABLED
+
+    // - Seems to be related to the configmaps skx/state-type: accesspoint
+    // - Listeners do not need to be synchronized with sk2 platform
+    // - This is what the do_reconcile_accesses function does
+    //   - Right now it does not care about the secrets, as generated RouterAccess/NetworkAccess
+    //     resources have `generateTlsCredentials = true`.
+    //   - TODO: I believe that the Credentials used by the Listeners will be signed remotely by
+    //     the management controller, so remoteIssuer must be used and a local component should handle
+    //     the CertificateRequests produced by the v2 controller.
+    // await sync_listeners(); - DISABLED
+
+    // - Synchronize the list of connectors based on the configmaps annotated with: skx/state-type: link
+    // - We need to change this so that NetworkLink and Link resources are produced instead.
+    // await sync_connectors(); - DISABLED
+
+    // - Watch for changes in Secrets and update the impacted Listeners
+    // - Not sure if it is needed
+    //WatchSecrets(on_secret_watch);
     WatchConfigMaps(on_configmap_watch);
 }
 

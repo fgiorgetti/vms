@@ -72,7 +72,13 @@ export async function Main() {
         }
 
         Log(`Site-Id : ${site_id}`);
-        let conn = amqp.OpenConnection('LocalRouter');
+        let conn;
+        if ( PLATFORM == 'sk2' ) {
+            let certs = await GetLocalRouterCerts();
+            conn = amqp.OpenConnection('LocalRouter', 'skupper-router-local', '5671', 'tls', certs.ca, certs.cert, certs.key);
+        } else {
+            conn = amqp.OpenConnection('LocalRouter');
+        }
         await router.Start(conn);
         await links.Start(BACKBONE_MODE);
         if (BACKBONE_MODE) {
@@ -90,4 +96,30 @@ export async function Main() {
         Flush();
         process.exit(1);
     };
+}
+
+async function GetLocalRouterCerts() {
+    const secret = await kube.LoadSecret('skupper-local-server');
+    let   count  = 0;
+    let tls_ca, tls_cert, tls_key;
+    for (const [key, value] of Object.entries(secret.data)) {
+        if (key == 'ca.crt') {
+            tls_ca = Buffer.from(value, 'base64');
+            count += 1;
+        } else if (key == 'tls.crt') {
+            tls_cert = Buffer.from(value, 'base64');
+            count += 1;
+        } else if (key == 'tls.key') {
+            tls_key = Buffer.from(value, 'base64');
+            count += 1;
+        }
+    }
+    if (count != 3) {
+        throw(Error(`Unexpected set of values from TLS secret data - expected 3, got ${count}`));
+    }
+    return {
+        ca   : tls_ca,
+        cert : tls_cert,
+        key  : tls_key,
+    }
 }
