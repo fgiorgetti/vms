@@ -59,7 +59,7 @@ export async function Main() {
         //
         // Start the API server early so we don't cause readiness-probe problems.
         //
-        await apiserver.Start(BACKBONE_MODE);
+        await apiserver.Start(BACKBONE_MODE, PLATFORM);
 
         if (!BACKBONE_MODE) {
             //

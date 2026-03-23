@@ -407,6 +407,20 @@ const onRouterAccessWatch = async function(type, route) {
     }
 }
 
+export function GetIngressBundleV2() {
+    let bundle = {};
+    for (const [apid, ap] of Object.entries(accessPoints)) {
+        if (ap.syncHash) {
+            bundle[apid] = {
+                host : ap.syncData.host,
+                port : ap.syncData.port,
+            };
+        }
+    }
+
+    return bundle;
+}
+
 export async function Start(siteId) {
     Log('[Ingress Skupper v2 module started]');
     await do_reconcile_config_maps();
