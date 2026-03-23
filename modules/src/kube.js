@@ -349,7 +349,7 @@ export async function DeleteNetworkAccess(name) {
   await DeleteSkupperResource("networkaccesses", name)
 }
 
-var secretWatches = []
+const secretWatches = []
 
 const startWatchSecrets = function () {
   secretWatch.watch(

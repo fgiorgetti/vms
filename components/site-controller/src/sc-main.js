@@ -115,7 +115,7 @@ async function GetLocalRouterCerts() {
         }
     }
     if (count != 3) {
-        throw(Error(`Unexpected set of values from TLS secret data - expected 3, got ${count}`));
+        throw new Error(`Unexpected set of values from TLS secret data - expected 3, got ${count}`);
     }
     return {
         ca   : tls_ca,

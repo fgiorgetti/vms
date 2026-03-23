@@ -60,9 +60,9 @@ import { createHash } from 'node:crypto';
 import { setTimeout } from 'node:timers/promises';
 import { log } from 'node:console';
 
-var reconcile_config_map_scheduled      = false;
-var reconcile_accesses_scheduled = false;
-var accessPoints = {}; // APID => {kind, routerPort, syncHash, syncData, toDelete}
+let reconcile_config_map_scheduled      = false;
+let reconcile_accesses_scheduled = false;
+let accessPoints = {}; // APID => {kind, routerPort, syncHash, syncData, toDelete}
 
 const new_access_point = function(apid, kind) {
     let value = {
