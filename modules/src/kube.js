@@ -37,6 +37,7 @@ let routeWatch
 let serviceWatch
 let podWatch
 let routerAccessWatch
+let certificateRequestWatch
 let watchErrorCount = 0
 let lastWatchError
 let namespace = "default"
@@ -81,6 +82,7 @@ export async function Start(k8s_mod, fs_mod, yaml_mod, standalone_namespace) {
   serviceWatch = new k8s.Watch(kc)
   podWatch = new k8s.Watch(kc)
   routerAccessWatch = new k8s.Watch(kc)
+  certificateRequestWatch = new k8s.Watch(kc)
 
   try {
     if (standalone_namespace) {
@@ -307,6 +309,16 @@ export async function GetSites() {
     version: "v2alpha1",
     namespace: namespace,
     plural: "sites",
+  })
+  return list.items
+}
+
+export async function GetCertificateRequests() {
+  let list = await customApi.listNamespacedCustomObject({
+    group: "skupper.io",
+    version: "v2alpha1",
+    namespace: namespace,
+    plural: "certificaterequests",
   })
   return list.items
 }
@@ -546,6 +558,33 @@ export function startWatchRouterAccessesFn(callback) {
 
 // Keep the old export name for compatibility
 export { startWatchRouterAccessesFn as startWatchRouterAccesses }
+
+const certificateRequestWatches = []
+const startWatchCertificateRequests = function () {
+  certificateRequestWatch.watch(
+    `/apis/cert-manager.io/v1/namespaces/${namespace}/certificaterequests`,
+    {},
+    (type, apiObj, watchObj) => {
+      for (const callback of certificateRequestWatches) {
+        callback(type, apiObj)
+      }
+    },
+    (err) => {
+      if (err) {
+        watchErrorCount++
+        lastWatchError = `CertificateRequests: ${err}`
+      }
+      startWatchCertificateRequests()
+    },
+  )
+}
+
+export function WatchCertificateRequests(callback) {
+  certificateRequestWatches.push(callback)
+  if (certificateRequestWatches.length == 1) {
+    startWatchCertificateRequests()
+  }
+}
 
 export async function ApplyObject(obj) {
   try {

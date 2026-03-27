@@ -443,7 +443,7 @@ const getCertDetail = async function(cid, res) {
     }
 }
 
-export async function AddHostToAccessPoint(siteId, apid, hostname, port) {
+export async function AddHostToAccessPoint(siteId, apid, hostname, port, certReq) {
     let retval = 1;
     const client = await ClientFromPool();
     try {
@@ -451,14 +451,19 @@ export async function AddHostToAccessPoint(siteId, apid, hostname, port) {
         const result = await client.query(`SELECT Id, Lifecycle, Hostname, Port, Kind FROM BackboneAccessPoints WHERE Id = $1 AND InteriorSite = $2`, [apid, siteId]);
         if (result.rowCount == 1) {
             let access = result.rows[0];
-            if (access.hostname != hostname || access.port != port) {
+            let skupperCertReq = null;
+            if (certReq) {
+                let certReqResult = await client.query(`INSERT INTO SkupperCertificateRequest(RequestData) values($1)`, [certReq]);
+                skupperCertReq = certReqResult.rows[0].id;
+            }
+            if (access.hostname != hostname || access.port != port || skupperCertReq != null) {
                 if (access.hostname) {
                     throw Error(`Referenced access (${access.access_ref}) already has a hostname`);
                 }
                 if (access.lifecycle != 'partial') {
                     throw Error(`Referenced access (${access.access_ref}) has lifecycle ${access.lifecycle}, expected partial`);
                 }
-                await client.query("UPDATE BackboneAccessPoints SET Hostname = $1, Port=$2, Lifecycle='new' WHERE Id = $3", [hostname, port, apid]);
+                await client.query("UPDATE BackboneAccessPoints SET Hostname = $1, Port=$2, SkupperCertificateRequest=$3, Lifecycle='new' WHERE Id = $4", [hostname, port, skupperCertReq, apid]);
             }
             await client.query("COMMIT");
 
@@ -492,11 +497,12 @@ const postBackboneIngress = async function (bsid, req, res) {
                 throw new Error(`Invalid access-point identifier ${apid}`);
             }
             const norm = util.ValidateAndNormalizeFields(apdata, {
-                'host' : {type: 'string', optional: false},
-                'port' : {type: 'number', optional: false},
+                'host'    : {type: 'string', optional: false},
+                'port'    : {type: 'number', optional: false},
+                'certReq' : {type: 'object', optional: true, default: {}},
             });
 
-            count += await AddHostToAccessPoint(bsid, apid, norm.host, norm.port);
+            count += await AddHostToAccessPoint(bsid, apid, norm.host, norm.port, norm.certReq);
         }
 
         if (count == 0) {
@@ -562,6 +568,7 @@ export async function Start() {
     app.get(API_PREFIX + 'backbonesite/:bsid/accesspoints/:target', async (req, res) => {
         switch (req.params.target) {
             case 'sk2'  :
+                // TODO: Implement finish for sk2
             case 'kube' :
             case 'm-server' :
                 await fetchBackboneAccessPointsKube(req.params.bsid, res);

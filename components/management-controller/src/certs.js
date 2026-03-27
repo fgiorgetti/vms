@@ -19,7 +19,7 @@
 
 "use strict";
 
-import { ApplyObject, LoadCertificate, WatchSecrets, WatchCertificates } from '@skupperx/modules/kube'
+import { ApplyObject, LoadCertificate, WatchSecrets, WatchCertificates, WatchCertificateRequests, Controlled } from '@skupperx/modules/kube'
 import { Log } from '@skupperx/modules/log'
 import { ClientFromPool, IntervalMilliseconds } from './db.js';
 import { BackboneExpiration, DefaultCaExpiration, DefaultCertExpiration, SiteDataplaneImage, SiteControllerImage, RootIssuer, CertOrganization } from './config.js';
@@ -329,7 +329,7 @@ const processNewCertificateRequests = async function() {
     const client = await ClientFromPool();
     try {
         await client.query('BEGIN');
-        const result = await client.query("SELECT * FROM CertificateRequests WHERE RequestTime <= now() and Lifecycle = 'new' ORDER BY CreatedTime LIMIT 1");
+        const result = await client.query("SELECT CertificateRequests.*, BackboneAccessPoints.SkupperCertificateRequest accesspointskuppercr FROM CertificateRequests LEFT JOIN BackboneAccessPoints on CertificateRequests.Accesspoint = BackboneAccessPoints.Id WHERE CertificateRequests.RequestTime <= now() and CertificateRequests.Lifecycle = 'new' ORDER BY CertificateRequests.CreatedTime LIMIT 1");
         if (result.rowCount == 1) {
             const row = result.rows[0];
             Log(`Processing Certificate Request: ${row.id} (${row.requesttype})`);
@@ -339,6 +339,7 @@ const processNewCertificateRequests = async function() {
             const extra_annotations = {};
             let dns_name;
             let usage;
+            let skuppercr = null;
             switch (row.requesttype) {
                 case 'mgmtController':
                     name   = `skx-mgmt-controller-${row.id}`;
@@ -354,6 +355,7 @@ const processNewCertificateRequests = async function() {
                     issuer   = row.issuer;
                     usage    = 'server auth';
                     dns_name = row.hostname;
+                    skuppercr = row.accesspointskuppercr
                     break;
                 case 'vanCA':
                     name   = `skx-van-ca-${row.id}`;
@@ -402,8 +404,15 @@ const processNewCertificateRequests = async function() {
                 }
             }
 
-            const cert_obj = certificateObject(name, row.durationhours, is_ca, issuer_name, row.id, row.issuer ? row.issuer : 'root', extra_annotations, name, dns_name, usage);
-            await ApplyObject(cert_obj);
+            if (!skuppercr) {
+                const cert_obj = certificateObject(name, row.durationhours, is_ca, issuer_name, row.id, row.issuer ? row.issuer : 'root', extra_annotations, name, dns_name, usage);
+                await ApplyObject(cert_obj);
+            } else {
+                const result = await client.query("SELECT RequestData FROM SkupperCertificateRequests WHERE Id = $1", [skuppercr]);
+                const csr = result.row[0].requestdata
+                const cert_obj = certificateRequestObject(name, row.durationhours, is_ca, issuer_name, row.id, row.issuer ? row.issuer : 'root', usage, csr);
+                await ApplyObject(cert_obj);
+            }
             await client.query("UPDATE CertificateRequests SET Lifecycle = 'cm_cert_created' WHERE Id = $1", [row.id]);
             reschedule_delay = 0;
         }
@@ -578,6 +587,17 @@ const onCertificateWatch = async function(action, cert) {
 }
 
 //
+// Handle watch events on CertificateRequests
+//
+const onCertificateRequestWatch = async function(action, cert) {
+    if (!Controlled(cert)) {
+        console.log('IGNORING WATCH EVENT FOR CERTIFICATE REQUEST: ' + action + ' - ' + cert.metadata.name);
+        return
+    }
+    console.log('WATCH EVENT FOR CERTIFICATE REQUEST: ' + action + ' - ' + cert.metadata.name);
+}
+
+//
 // Generate a cert-manager Certificate object from a template.
 //
 const certificateObject = function(name, duration_hours, is_ca, issuer, db_link, issuer_link, extra_annotations, common_name, dns_name, usage) {
@@ -631,6 +651,36 @@ const certificateObject = function(name, duration_hours, is_ca, issuer, db_link,
 }
 
 //
+// Generate a cert-manager CertificateRequest object from a template.
+//
+const certificateRequestObject = function(name, duration_hours, is_ca, issuer, db_link, issuer_link, usage, csr) {
+    const certReq = {
+        apiVersion: 'cert-manager.io/v1',
+        kind: 'CertificateRequest',
+        metadata: {
+            name: name,
+            annotations: {
+                META_ANNOTATION_SKUPPERX_CONTROLLED: 'true',
+                'skupper.io/skx-dblink': db_link,
+                'skupper.io/skx-issuerlink': issuer_link,
+            },
+        },
+        spec: {
+            request: csr,
+            duration: `${duration_hours}h`,
+            isCA: is_ca,
+            usages: [usage],
+            issuerRef: {
+                name: issuer,
+                kind: 'Issuer',
+                group: 'cert-manager.io',
+            },
+        },
+    };
+    return certReq;
+}
+
+//
 // Generate a cert-manager Issuer object from a template.
 //
 const issuerObject = function(name, db_link) {
@@ -666,5 +716,6 @@ export async function Start() {
 
     WatchSecrets(onSecretWatch);
     WatchCertificates(onCertificateWatch);
+    WatchCertificateRequests(onCertificateRequestWatch);
 }
 

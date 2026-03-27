@@ -171,6 +171,7 @@ CREATE TABLE BackboneAccessPoints (
     Lifecycle LifecycleType DEFAULT 'partial',
     Failure text,
     Certificate UUID REFERENCES TlsCertificates,
+    SkupperCertificateRequest UUID REFERENCES SkupperCertificateRequests,
     Hostname text,
     Port text,
 
@@ -341,6 +342,20 @@ CREATE TABLE CertificateRequests (
     Site UUID REFERENCES MemberSites (Id) ON DELETE CASCADE
 );
 
+
+--
+-- Skupper V2 CSRs
+--
+CREATE TABLE SkupperCertificateRequests (
+    Id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    RequestData text,
+    StatusData text,
+    --
+    -- The time when this request row was created.  This should be used to determine the order of processing
+    -- when there are multiple actionable requests in the table.  First-created, first-processed.
+    --
+    CreatedTime timestamptz
+);
 
 -- ===================================================================================
 -- Everything from this point down is in a more preliminary state than the stuff above.

@@ -44,7 +44,8 @@ import {
     ApplyObject,
     GetConfigmaps,
     WatchConfigMaps,
-    startWatchRouterAccesses
+    startWatchRouterAccesses,
+    GetCertificateRequests
 } from '@skupperx/modules/kube';
 import { Log } from '@skupperx/modules/log'
 import {
@@ -70,6 +71,7 @@ const new_access_point = function(apid, kind) {
         routerPort : null,
         syncHash   : null,
         syncData   : {},
+        certReq    : {},
         toDelete   : false,
     };
 
@@ -98,9 +100,17 @@ const backbone_ingress = function(apid) {
     }
 }
 
+const getAccessPointResourceName = function(apid) {
+    if (!apid in accessPoints) {
+        return undefined;
+    }
+    const access = accessPoints[apid];
+    return `skx-${access.kind}-${apid}`;
+}
+
 const backbone_routeraccess = function(apid) {
     const access = accessPoints[apid];
-    const name   = `skx-${access.kind}-${apid}`;
+    const name   = getAccessPointResourceName(apid);
     let routerAccess = {
         apiVersion : 'skupper.io/v2alpha1',
         kind       : 'RouterAccess',
@@ -114,6 +124,7 @@ const backbone_routeraccess = function(apid) {
         spec: {
             tlsCredentials: name,
             generateTlsCredentials: true,
+            remoteIssuer: true,
             roles : [{
                 name: getRouterAccessRole(access.kind)
             }],
@@ -193,6 +204,12 @@ const reconcile_accesses = async function() {
         "peer": {},
         "member": {},
     };
+    let certificateRequests = {};
+
+    // Retrieving CertificateRequests
+    for (const request of await GetCertificateRequests()) {
+        certificateRequests[request.metadata.name] = request;
+    }
 
     // Retrieving NetworkAccesses ("van" accesspoints)
     for (const networkAccess of await GetNetworkAccesses()) {
@@ -217,7 +234,7 @@ const reconcile_accesses = async function() {
     // Retrieving RouterAccesses ("manage", "peer" and "member" accesspoints)
     for (const routerAccess of await GetRouterAccesses()) {
         const apid = Annotation(routerAccess, META_ANNOTATION_STATE_ID);
-        if (!Controlled(routerAccess)) {
+        if (!Controlled(routerAccess) || !routerAccess.status.endpoints) {
             continue;
         }
         for (const endpoint of routerAccess.status.endpoints) {
@@ -259,6 +276,11 @@ const reconcile_accesses = async function() {
                 accessPoints[apid].syncData = data;
                 await UpdateLocalState(`accessstatus-${apid}`, hash, data);
             }
+            let crName = getAccessPointResourceName(apid);
+            if (crName) {
+                accessPoints[apid].certReq = certificateRequests[getAccessPointResourceName(apid)];
+            }
+
             endpoint.delete = false;
         } else {
             await ApplyObject(backbone_ingress(apid));
@@ -414,6 +436,7 @@ export function GetIngressBundleV2() {
             bundle[apid] = {
                 host : ap.syncData.host,
                 port : ap.syncData.port,
+                certReq : ap.certReq,
             };
         }
     }

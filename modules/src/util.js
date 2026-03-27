@@ -108,7 +108,9 @@ export function ValidateAndNormalizeFields(fields, table) {
         }
         normalized[key] = value
         break
-
+      case "object":
+        normalized[key] = value
+        break
       case "dnsname":
         if (dnsRegex.test(value)) {
           normalized[key] = value
