@@ -83,13 +83,13 @@ Hashed payload record:
 
 The target output depends on the sync data. Refer to the following table:
 
-| kind   | CR-kind       | role-name     |
-| ------ | ------------- | ------------- |
-| manage | RouterAccess  | normal        |
-| peer   | RouterAccess  | inter-router  |
-| claim  | RouterAccess  | normal        |
-| member | RouterAccess  | edge          |
-| van    | RouterAccess  | inter-network |
+| kind   | CR-kind      | role-name     |
+| ------ | ------------ | ------------- |
+| manage | RouterAccess | normal        |
+| peer   | RouterAccess | inter-router  |
+| claim  | RouterAccess | normal        |
+| member | RouterAccess | edge          |
+| van    | RouterAccess | inter-network |
 
 When the CR kind is `RouterAccess`, the object is generated like this:
 

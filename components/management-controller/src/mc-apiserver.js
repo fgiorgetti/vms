@@ -308,8 +308,8 @@ const getVanConfigConnecting = async function (req, res) {
                         routingKey,
                         "app.kubernetes.io/name=network-observer",
                         "skupper-network-observer-client"
-                    ),
-                )
+                    )
+                );
             }
             res.status(returnStatus).send(util.ToYaml(output));
         }

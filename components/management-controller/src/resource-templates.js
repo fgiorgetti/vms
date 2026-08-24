@@ -85,7 +85,7 @@ export function BackboneSite(name, _siteId, networkId) {
             linkAccess: "none",
             settings: {
                 networkId: networkId,
-            }
+            },
         },
     };
 }
@@ -104,26 +104,28 @@ export function NetworkCR(networkId) {
 }
 
 export function NetworkLinkCR(host, port, secret, exposedKeys) {
-    let networkLink = {
+    const networkLink = {
         apiVersion: CRD_API_VERSION,
         kind: "Link",
         metadata: {
             name: "management-link",
         },
         spec: {
-            endpoints: [{
-                group: "skupper-router",
-                name: "inter-network",
-                host: host,
-                port: port,
-            }],
+            endpoints: [
+                {
+                    group: "skupper-router",
+                    name: "inter-network",
+                    host: host,
+                    port: port,
+                },
+            ],
             tlsCredentials: secret,
         },
     };
-    if (!!exposedKeys) {
+    if (exposedKeys) {
         networkLink.spec["settings"] = {
-            "routingKeys": exposedKeys,
-        }
+            routingKeys: exposedKeys,
+        };
     }
     return networkLink;
 }

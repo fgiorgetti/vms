@@ -87,7 +87,7 @@ const getAccessEndpoint = async function (access) {
     if (!hasEndpoints(access)) {
         return null;
     }
-    let filterFn = (endpoint) => {
+    const filterFn = (endpoint) => {
         return endpoint.group == "skupper-router";
     };
     // if (access.kind == "NetworkAccess") {
@@ -147,7 +147,7 @@ export function GetRouterAccessRole(kind) {
         case "member":
             return "edge";
         case "van":
-            return "inter-network"
+            return "inter-network";
         default:
             throw new Error(`Unknown kind: ${kind}`);
     }
