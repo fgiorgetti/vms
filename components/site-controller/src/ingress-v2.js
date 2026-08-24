@@ -28,11 +28,7 @@
 //   Ingress bundles for the API
 //
 
-import {
-    Annotation,
-    Controlled,
-    startWatchRouterAccesses,
-} from "@vms/modules/kube";
+import { Annotation, Controlled, startWatchRouterAccesses } from "@vms/modules/kube";
 import { Log } from "@vms/modules/log";
 import { META_ANNOTATION_STATE_ID } from "@vms/modules/common";
 import { UpdateLocalState } from "./sync-site-kube.js";
