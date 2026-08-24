@@ -167,7 +167,7 @@ export function AccessPointCR(apId, data) {
         case "manage":
             return accessPointRouterAccess(apId, data);
         case "van":
-            return accessPointNetworkAccess(apId, data);
+            return accessPointRouterAccess(apId, data);
         case "claim":
             return accessPointRouterAccess(apId, data);
         case "peer":
@@ -250,33 +250,6 @@ const accessPointRouterAccess = function (apId, data) {
         },
     };
     return routerAccess;
-};
-
-const accessPointNetworkAccess = function (apId, data) {
-    const name = short_access_name(`${data.kind}-${apId}`);
-    const networkAccess = {
-        apiVersion: "skupper.io/v2alpha1",
-        kind: "RouterAccess",
-        metadata: {
-            name: name,
-            annotations: {
-                [META_ANNOTATION_VMS_CONTROLLED]: "true",
-                [META_ANNOTATION_STATE_ID]: apId,
-                [META_ANNOTATION_STATE_KEY]: `access-${apId}`,
-                [META_ANNOTATION_STATE_DIR]: "remote",
-            },
-        },
-        spec: {
-            tlsCredentials: `vms-access-${apId}`,
-            generateTlsCredentials: false,
-            bindHost: "bindHost" in data ? data.bindHost : "",
-            accessType: "accessType" in data ? data.accessType : "",
-            roles: {
-                name: "inter-network",
-            },
-        },
-    };
-    return networkAccess;
 };
 
 export function ConnectorCR(name, port, routingKey, selector, tlsCredentials) {

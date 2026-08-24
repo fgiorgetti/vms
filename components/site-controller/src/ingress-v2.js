@@ -21,7 +21,7 @@
 
 //
 // This module is responsible for keeping the current state for desired accessPoints.
-// The accessPoints map is maintained based on RouterAccess and NetworkAccess watchers.
+// The accessPoints map is maintained based on RouterAccess watcher.
 //
 // The output of this module:
 //   Access Points states are synchronized to the management controller.
@@ -32,7 +32,6 @@ import {
     Annotation,
     Controlled,
     startWatchRouterAccesses,
-    WatchNetworkAccesses,
 } from "@vms/modules/kube";
 import { Log } from "@vms/modules/log";
 import { META_ANNOTATION_STATE_ID } from "@vms/modules/common";
@@ -90,11 +89,6 @@ const getAccessEndpoint = async function (access) {
     const filterFn = (endpoint) => {
         return endpoint.group == "skupper-router";
     };
-    // if (access.kind == "NetworkAccess") {
-    //     filterFn = (endpoint) => {
-    //         return endpoint.name == "inter-network";
-    //     };
-    // }
     for (const endpoint of access.status.endpoints) {
         if (filterFn(endpoint)) {
             return {
@@ -198,5 +192,4 @@ export function GetIngressBundleV2() {
 export async function Start() {
     Log("[Ingress Skupper v2 module started]");
     startWatchRouterAccesses(handleAccessResource);
-    //WatchNetworkAccesses(handleAccessResource);
 }

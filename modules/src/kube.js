@@ -37,7 +37,6 @@ let routeWatch;
 let serviceWatch;
 let podWatch;
 let routerAccessWatch;
-let networkAccessWatch;
 let watchErrorCount = 0;
 let lastWatchError;
 let namespace = "default";
@@ -82,7 +81,6 @@ export async function Start(k8s_mod, fs_mod, yaml_mod, standalone_namespace) {
     serviceWatch = new k8s.Watch(kc);
     podWatch = new k8s.Watch(kc);
     routerAccessWatch = new k8s.Watch(kc);
-    networkAccessWatch = new k8s.Watch(kc);
 
     try {
         if (standalone_namespace) {
@@ -391,27 +389,6 @@ export async function GetSites(ns) {
     return list.items;
 }
 
-export async function GetNetworkAccesses() {
-    const list = await customApi.listNamespacedCustomObject({
-        group: "skupper.io",
-        version: "v2alpha1",
-        namespace: namespace,
-        plural: "networkaccesses",
-    });
-    return list.items;
-}
-
-export async function LoadNetworkAccess(name) {
-    const resource = await customApi.getNamespacedCustomObject({
-        group: "skupper.io",
-        version: "v2alpha1",
-        name: name,
-        namespace: namespace,
-        plural: "networkaccesses",
-    });
-    return resource;
-}
-
 export async function GetRouterAccesses(ns) {
     const list = await customApi.listNamespacedCustomObject({
         group: "skupper.io",
@@ -486,20 +463,12 @@ export async function DeleteRouterAccess(name) {
     await DeleteSkupperResource("routeraccesses", name);
 }
 
-export async function DeleteNetworkAccess(name) {
-    await DeleteSkupperResource("networkaccesses", name);
-}
-
 export async function UpdateLink(obj) {
     return await UpdateSkupperResource("links", obj.metadata.name, obj);
 }
 
 export async function UpdateRouterAccess(obj) {
     return await UpdateSkupperResource("routeraccesses", obj.metadata.name, obj);
-}
-
-export async function UpdateNetworkAccess(obj) {
-    return await UpdateSkupperResource("networkaccesses", obj.metadata.name, obj);
 }
 
 export async function LoadLink(name) {
@@ -735,33 +704,6 @@ export function startWatchRouterAccessesFn(callback, ns) {
 
 // Keep the old export name for compatibility
 export { startWatchRouterAccessesFn as startWatchRouterAccesses };
-
-const networkAccessWatches = [];
-export function startWatchNetworkAccesses() {
-    networkAccessWatch.watch(
-        `/apis/skupper.io/v2alpha1/namespaces/${namespace}/networkaccesses`,
-        {},
-        (type, apiObj, _watchObj) => {
-            for (const callback of networkAccessWatches) {
-                callback(type, apiObj);
-            }
-        },
-        (err) => {
-            if (err) {
-                watchErrorCount++;
-                lastWatchError = `NetworkAccesses: ${err}`;
-            }
-            startWatchNetworkAccesses();
-        }
-    );
-}
-
-export function WatchNetworkAccesses(callback) {
-    networkAccessWatches.push(callback);
-    if (networkAccessWatches.length == 1) {
-        startWatchNetworkAccesses();
-    }
-}
 
 export async function ApplyObject(obj, ns = "") {
     try {

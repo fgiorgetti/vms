@@ -112,25 +112,6 @@ spec:
   accessType: <accessType>
 ```
 
-When the CR kind is `NetworkAccess`, the object looks like this:
-
-```
-apiVersion: skupper.io/v2alpha1
-kind: NetworkAccess
-metadata:
-  name vms-access-<access-point-id>
-  annotations:
-    vms/state-id: Database ID of the associated AccessPoint
-    vms/state-key: access-<access-point-id>
-    vms/state-hash: <hash>
-    vms/state-dir: remote
-spec:
-  generateTlsCredentials: false
-  tlsCredentials: vms-access-<access-point-id>
-  bindHost: <bindhost>
-  accessType: <accessType>
-```
-
 ### Access Point Status
 
 #### Direction

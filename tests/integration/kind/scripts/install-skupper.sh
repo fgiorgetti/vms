@@ -16,15 +16,10 @@ for crd in \
   skupper_attached_connector_binding_crd.yaml \
   skupper_attached_connector_crd.yaml \
   skupper_certificate_crd.yaml \
-  skupper_certificate_request_crd.yaml \
   skupper_connector_crd.yaml \
-  skupper_inter_network_ingress_crd.yaml \
   skupper_link_crd.yaml \
   skupper_listener_crd.yaml \
   skupper_multikeylistener_crd.yaml \
-  skupper_network_access_crd.yaml \
-  skupper_network_crd.yaml \
-  skupper_network_link_crd.yaml \
   skupper_router_access_crd.yaml \
   skupper_secured_access_crd.yaml \
   skupper_site_crd.yaml
@@ -46,18 +41,14 @@ kubectl --context "${KUBECTL_CONTEXT}" -n "${SKUPPER_NAMESPACE}" set env deploym
   SKUPPER_ROUTER_IMAGE_PULL_POLICY=IfNotPresent \
   --containers=controller
 
-echo "Extending skupper-controller ClusterRole for multi-van resources..."
+echo "Extending skupper-controller ClusterRole for multi-van-slim permissions..."
 if ! kubectl --context "${KUBECTL_CONTEXT}" patch clusterrole skupper-controller --type=json -p='[
   {"op":"add","path":"/rules/-","value":{
-    "apiGroups":["skupper.io"],
+    "apiGroups":["apiextensions.k8s.io"],
     "resources":[
-      "networks","networks/status",
-      "internetworkingresses","internetworkingresses/status",
-      "networklinks","networklinks/status",
-      "networkaccesses","networkaccesses/status",
-      "certificaterequests","certificaterequests/status"
+      "customresourcedefinitions"
     ],
-    "verbs":["get","list","watch","create","update","patch","delete"]
+    "verbs":["get"]
   }}
 ]'; then
   echo "ClusterRole patch skipped (rules may already exist)"

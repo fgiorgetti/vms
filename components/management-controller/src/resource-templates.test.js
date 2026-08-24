@@ -62,13 +62,14 @@ describe("resource-templates", () => {
     it("NetworkLinkCR parses port as integer", () => {
         const cr = NetworkLinkCR("router.example.com", "443", "tls-secret");
         expect(cr.spec.endpoints[0].name).toBe("inter-network");
-        expect(cr.spec.endpoints[0].port).toBe(443);
-        expect(cr.spec.endpoints[0].hostname).toBe("router.example.com");
+        expect(cr.spec.endpoints[0].port).toBe("443");
+        expect(cr.spec.endpoints[0].host).toBe("router.example.com");
     });
 
-    it("AccessPointCR for van kind produces NetworkAccess", () => {
+    it("AccessPointCR for van kind produces RouterAccess with inter-network role", () => {
         const cr = AccessPointCR("ap-1", { kind: "van" });
         expect(cr.kind).toBe("RouterAccess");
+        expect(cr.spec.roles[0].name).toBe("inter-network");
     });
 
     it("AccessPointCR for member kind produces RouterAccess with edge role", () => {

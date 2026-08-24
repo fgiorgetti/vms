@@ -194,22 +194,9 @@ export KUBECONFIG=~/.kube/van
     a. Run `kubectl edit deployment skupper-controller -n skupper`
     b. Swap the kube-adaptor, skupper-router, and controller images for the following:
 
-    - quay.io/fgiorgetti/kube-adaptor:multi-van
-    - quay.io/tedlross/skupper-router:multi-van
-    - quay.io/fgiorgetti/controller:multi-van
-
-3. Run `kubectl edit clusterrole skupper-controller -n skupper` and add the following to the skupper.io apiGroups section
-
-    - networks
-    - networks/status
-    - internetworkingresses
-    - internetworkingresses/status
-    - networklinks
-    - networklinks/status
-    - networkaccesses
-    - networkaccesses/status
-    - certificaterequests
-    - certificaterequests/status
+    - quay.io/fgiorgetti/kube-adaptor:multi-van-slim
+    - quay.io/skupper/skupper-router:main
+    - quay.io/fgiorgetti/controller:multi-van-slim
 
 ### Step 3: Create your Kubernetes namespace for the van to run in
 

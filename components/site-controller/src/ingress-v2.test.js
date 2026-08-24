@@ -28,7 +28,6 @@ vi.mock("@vms/modules/kube", () => ({
     startWatchRouterAccesses: vi.fn((handler) => {
         accessHandler = handler;
     }),
-    WatchNetworkAccesses: vi.fn(),
 }));
 
 vi.mock("./sync-site-kube.js", () => ({

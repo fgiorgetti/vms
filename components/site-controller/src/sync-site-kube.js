@@ -61,15 +61,12 @@ import {
     LoadSecret,
     LoadConfigmap,
     UpdateLink,
-    UpdateNetworkAccess,
     UpdateRouterAccess,
     LoadLink,
     DeleteLink,
     Controlled,
     DeleteRouterAccess,
-    DeleteNetworkAccess,
     LoadRouterAccess,
-    LoadNetworkAccess,
     GetListeners,
     LoadListener,
     DeleteListener,
@@ -216,9 +213,6 @@ const doStateChangeSpec = async function (obj, data) {
             case "RouterAccess":
                 await syncRouterAccessSpec(obj, data);
                 break;
-            case "NetworkAccess":
-                await syncNetworkAccessSpec(obj, data);
-                break;
             case "Listener":
                 await syncListenerSpec(obj, data);
                 break;
@@ -246,8 +240,6 @@ const retrieveLatest = async function (apiVersion, objKind, objName) {
                     return await LoadLink(objName);
                 case "RouterAccess":
                     return await LoadRouterAccess(objName);
-                case "NetworkAccess":
-                    return await LoadNetworkAccess(objName);
                 case "Listener":
                     return await LoadListener(objName);
             }
@@ -273,8 +265,6 @@ const updateObject = async function (obj) {
                 return await UpdateLink(obj);
             case "RouterAccess":
                 return await UpdateRouterAccess(obj);
-            case "NetworkAccess":
-                return await UpdateNetworkAccess(obj);
             default:
                 Log(`Unsupported object kind: ${apiVersion}.${objKind}, name: ${objName}`);
         }
@@ -306,19 +296,6 @@ async function syncRouterAccessSpec(obj, data) {
                 name: GetRouterAccessRole(data.kind),
             },
         ],
-    };
-    if ("bindHost" in data) {
-        obj.spec.bindHost = data.bindHost;
-    }
-    if ("accessType" in data) {
-        obj.spec.accessType = data.accessType;
-    }
-}
-
-async function syncNetworkAccessSpec(obj, data) {
-    obj.spec = {
-        tlsCredentials: `vms-access-${Annotation(obj, META_ANNOTATION_STATE_ID)}`,
-        generateTlsCredentials: false,
     };
     if ("bindHost" in data) {
         obj.spec.bindHost = data.bindHost;
@@ -435,8 +412,6 @@ const onStateChange = async function (peerId, stateKey, hash, data) {
                 await DeleteLink(objName);
             } else if (objKind == "RouterAccess") {
                 await DeleteRouterAccess(objName);
-            } else if (objKind == "NetworkAccess") {
-                await DeleteNetworkAccess(objName);
             } else if (objKind == "Listener") {
                 await DeleteListener(objName);
             }

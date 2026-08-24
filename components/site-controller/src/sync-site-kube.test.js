@@ -67,7 +67,6 @@ vi.mock("@vms/modules/kube", () => ({
     LoadSecret: vi.fn(),
     LoadConfigmap: vi.fn(),
     UpdateLink: vi.fn(),
-    UpdateNetworkAccess: vi.fn(),
     UpdateRouterAccess: vi.fn(),
     LoadLink: vi.fn(async () => undefined),
     DeleteLink: vi.fn(),
@@ -75,9 +74,7 @@ vi.mock("@vms/modules/kube", () => ({
         (obj) => obj?.metadata?.annotations?.[META_ANNOTATION_VMS_CONTROLLED] === "true"
     ),
     DeleteRouterAccess: vi.fn(),
-    DeleteNetworkAccess: vi.fn(),
     LoadRouterAccess: vi.fn(async () => undefined),
-    LoadNetworkAccess: vi.fn(async () => undefined),
     LoadListener: vi.fn(async () => undefined),
     DeleteListener: vi.fn(),
 }));
