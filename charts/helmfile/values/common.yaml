@@ -34,8 +34,8 @@ postgres:
 # configuration for the management controller image
 managementServer:
   image:
-    repository: quay.io/skupper/vms-management-controller
-    tag: latest
+    repository: quay.io/fgiorgetti/vms-management-controller
+    tag: multi-van-slim
     pullPolicy: Always
 
 # Release configuration:

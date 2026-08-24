@@ -90,11 +90,11 @@ const getAccessEndpoint = async function (access) {
     let filterFn = (endpoint) => {
         return endpoint.group == "skupper-router";
     };
-    if (access.kind == "NetworkAccess") {
-        filterFn = (endpoint) => {
-            return endpoint.name == "inter-network";
-        };
-    }
+    // if (access.kind == "NetworkAccess") {
+    //     filterFn = (endpoint) => {
+    //         return endpoint.name == "inter-network";
+    //     };
+    // }
     for (const endpoint of access.status.endpoints) {
         if (filterFn(endpoint)) {
             return {
@@ -146,6 +146,8 @@ export function GetRouterAccessRole(kind) {
             return "inter-router";
         case "member":
             return "edge";
+        case "van":
+            return "inter-network"
         default:
             throw new Error(`Unknown kind: ${kind}`);
     }
@@ -196,5 +198,5 @@ export function GetIngressBundleV2() {
 export async function Start() {
     Log("[Ingress Skupper v2 module started]");
     startWatchRouterAccesses(handleAccessResource);
-    WatchNetworkAccesses(handleAccessResource);
+    //WatchNetworkAccesses(handleAccessResource);
 }

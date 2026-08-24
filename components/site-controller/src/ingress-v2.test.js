@@ -43,6 +43,7 @@ describe("GetRouterAccessRole", () => {
         expect(GetRouterAccessRole("claim")).toBe("normal");
         expect(GetRouterAccessRole("peer")).toBe("inter-router");
         expect(GetRouterAccessRole("member")).toBe("edge");
+        expect(GetRouterAccessRole("van")).toBe("inter-network");
     });
 
     it("throws for unknown kinds", () => {

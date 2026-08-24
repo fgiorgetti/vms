@@ -66,8 +66,7 @@ export function generateBootstrapYaml(siteId = TEST_SITE_ID) {
             accessType: "local",
         }),
         // Network must exist before Site (multi-van).
-        resourceTemplates.NetworkCR("mbone"),
-        resourceTemplates.BackboneSite(TEST_SITE_NAME, siteId),
+        resourceTemplates.BackboneSite(TEST_SITE_NAME, siteId, "mbone"),
     ]);
 }
 

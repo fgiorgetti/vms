@@ -74,7 +74,7 @@ export function HashOfSpec(obj) {
     return HashOfData(obj.spec);
 }
 
-export function BackboneSite(name, _siteId) {
+export function BackboneSite(name, _siteId, networkId) {
     return {
         apiVersion: CRD_API_VERSION,
         kind: "Site",
@@ -83,6 +83,9 @@ export function BackboneSite(name, _siteId) {
         },
         spec: {
             linkAccess: "none",
+            settings: {
+                networkId: networkId,
+            }
         },
     };
 }
@@ -100,19 +103,29 @@ export function NetworkCR(networkId) {
     };
 }
 
-export function NetworkLinkCR(host, port, secret) {
-    return {
+export function NetworkLinkCR(host, port, secret, exposedKeys) {
+    let networkLink = {
         apiVersion: CRD_API_VERSION,
-        kind: "NetworkLink",
+        kind: "Link",
         metadata: {
             name: "management-link",
         },
         spec: {
-            hostname: host,
-            port: parseInt(port, 10),
+            endpoints: [{
+                group: "skupper-router",
+                name: "inter-network",
+                host: host,
+                port: port,
+            }],
             tlsCredentials: secret,
         },
     };
+    if (!!exposedKeys) {
+        networkLink.spec["settings"] = {
+            "routingKeys": exposedKeys,
+        }
+    }
+    return networkLink;
 }
 
 export function LinkCR(linkId, data, secret) {
@@ -178,6 +191,8 @@ function getRouterAccessRole(kind) {
             return "inter-router";
         case "member":
             return "edge";
+        case "van":
+            return "inter-network";
         default:
             throw new Error(`Unknown kind: ${kind}`);
     }
@@ -239,7 +254,7 @@ const accessPointNetworkAccess = function (apId, data) {
     const name = short_access_name(`${data.kind}-${apId}`);
     const networkAccess = {
         apiVersion: "skupper.io/v2alpha1",
-        kind: "NetworkAccess",
+        kind: "RouterAccess",
         metadata: {
             name: name,
             annotations: {
@@ -254,6 +269,9 @@ const accessPointNetworkAccess = function (apId, data) {
             generateTlsCredentials: false,
             bindHost: "bindHost" in data ? data.bindHost : "",
             accessType: "accessType" in data ? data.accessType : "",
+            roles: {
+                name: "inter-network",
+            },
         },
     };
     return networkAccess;
@@ -275,25 +293,6 @@ export function ConnectorCR(name, port, routingKey, selector, tlsCredentials) {
         },
     };
     return connector;
-}
-
-export function InterNetworkIngressCR(name, routingKey, networkLink = "", networkAccess = "") {
-    const ingress = {
-        apiVersion: "skupper.io/v2alpha1",
-        kind: "InterNetworkIngress",
-        metadata: {
-            name: name,
-        },
-        spec: {
-            routingKey: routingKey,
-        },
-    };
-    if (networkLink) {
-        ingress.spec.networkLink = networkLink;
-    } else if (networkAccess) {
-        ingress.spec.networkAccess = networkAccess;
-    }
-    return ingress;
 }
 
 export function Secret(certificate, profile_name, inject, stateKey) {

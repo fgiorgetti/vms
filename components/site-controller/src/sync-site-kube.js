@@ -131,9 +131,6 @@ const kubeObjectForState = function (stateKey, data = null) {
             if (data && "kind" in data) {
                 apKind = data.kind;
             }
-            if (apKind == "van") {
-                objKind = "NetworkAccess";
-            }
             objName = apKind + "-" + stateId.split("-")[0];
             break;
         }

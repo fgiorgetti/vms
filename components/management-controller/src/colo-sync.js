@@ -351,9 +351,9 @@ async function doVisitNamespace(ns) {
                 resourceTemplates.Deployment(coloNamespaces[ns].site.id, true, "sk2"),
                 resourceTemplates.BackboneSite(
                     coloNamespaces[ns].site.name,
-                    coloNamespaces[ns].site.id
+                    coloNamespaces[ns].site.id,
+                    "mbone"
                 ),
-                resourceTemplates.NetworkCR("mbone"),
             ];
             for (const obj of resources) {
                 await kube.ApplyObject(obj, ns);

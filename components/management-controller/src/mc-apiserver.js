@@ -171,8 +171,7 @@ const fetchBackboneSiteSkupper2 = async function (req, res) {
                 }
             }
 
-            output.push(resourceTemplates.BackboneSite(site.name, siteId));
-            output.push(resourceTemplates.NetworkCR("mbone"));
+            output.push(resourceTemplates.BackboneSite(site.name, siteId, "mbone"));
 
             return util.ToYaml(output);
         });
@@ -290,16 +289,18 @@ const getVanConfigConnecting = async function (req, res) {
             returnStatus = 404;
             res.status(returnStatus).send("Network or Access Point not found");
         } else {
+            let routingKey;
             const van = result.rows[0];
             const ap = apResult.rows[0];
             const secret = await LoadSecret(van.objectname);
+            if (exposeNetworkObserverConsole) {
+                routingKey = `skupper-console-${van.vanid}`;
+            }
             const output = [
-                resourceTemplates.NetworkCR(van.vanid),
-                resourceTemplates.NetworkLinkCR(ap.hostname, ap.port, van.objectname),
+                resourceTemplates.NetworkLinkCR(ap.hostname, ap.port, van.objectname, routingKey),
                 resourceTemplates.Secret(secret, van.objectname),
             ];
             if (exposeNetworkObserverConsole) {
-                const routingKey = `skupper-console-${van.vanid}`;
                 output.push(
                     resourceTemplates.ConnectorCR(
                         "skupper-console",
@@ -308,12 +309,7 @@ const getVanConfigConnecting = async function (req, res) {
                         "app.kubernetes.io/name=network-observer",
                         "skupper-network-observer-client"
                     ),
-                    resourceTemplates.InterNetworkIngressCR(
-                        "skupper-console",
-                        routingKey,
-                        "management-link"
-                    )
-                );
+                )
             }
             res.status(returnStatus).send(util.ToYaml(output));
         }

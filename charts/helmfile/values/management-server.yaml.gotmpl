@@ -7,6 +7,6 @@ postgres:
   credentialsSecret:
     {{- toYaml .Values.postgres.credentialsSecret | nindent 4 }}
 image:
-  repository: {{ $image.repository | default "quay.io/skupper/vms-management-controller" | quote }}
-  tag: {{ $image.tag | default "latest" | quote }}
+  repository: {{ $image.repository | default "quay.io/fgiorgetti/vms-management-controller" | quote }}
+  tag: {{ $image.tag | default "multi-van-slim" | quote }}
   pullPolicy: {{ $image.pullPolicy | default "Always" | quote }}

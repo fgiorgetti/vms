@@ -387,7 +387,7 @@ CREATE TABLE CertificateRequests (
 -- Pre-populate the database with some test data.
 --
 INSERT INTO Configuration (Id, RootIssuer, DefaultCaExpiration, DefaultCertExpiration, BackboneCaExpiration, SiteControllerImage, CertOrganization)
-    VALUES (0, 'vms-root', '30 days', '1 week', '1 year', 'quay.io/skupper/vms-site-controller:latest', 'enterprise.com');
+    VALUES (0, 'vms-root', '30 days', '1 week', '1 year', 'quay.io/fgiorgetti/vms-site-controller:multi-van-slim', 'enterprise.com');
 
 INSERT INTO TargetPlatforms (ShortName, LongName) VALUES
     ('sk2',      'Kubernetes/OpenShift'),
