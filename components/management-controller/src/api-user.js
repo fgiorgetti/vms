@@ -41,6 +41,7 @@ const createVan = async function (req, res) {
             name: { type: "dnsname", optional: false },
             nettype: { type: "dnsname", optional: false },
             ownerGroup: { type: "string", optional: true, default: "" },
+            vanid: { type: "dns-segment", optional: true, default: "" },
             starttime: { type: "timestampz", optional: true, default: null },
             endtime: { type: "timestampz", optional: true, default: null },
             deletedelay: { type: "interval", optional: true, default: null },
@@ -64,6 +65,21 @@ const createVan = async function (req, res) {
                     existingNames.push(row.name);
                 }
                 const uniqueName = UniquifyName(norm.name, existingNames);
+
+                //
+                // If a vanid was provided, verify it is unique within this backbone.
+                //
+                if (norm.vanid) {
+                    const vanIdResult = await client.query(
+                        "SELECT Id FROM ApplicationNetworks WHERE Backbone = $1 AND VanId = $2",
+                        [bid, norm.vanid]
+                    );
+                    if (vanIdResult.rowCount > 0) {
+                        throw new Error(
+                            `Network ID '${norm.vanid}' is already in use on this backbone`
+                        );
+                    }
+                }
 
                 let extraCols = "";
                 let extraVals = "";
@@ -89,6 +105,11 @@ const createVan = async function (req, res) {
                 if (norm.ownerGroup) {
                     extraCols += ", OwnerGroup";
                     extraVals += `, '${norm.ownerGroup}'`;
+                }
+
+                if (norm.vanid) {
+                    extraCols += ", VanId";
+                    extraVals += `, '${norm.vanid}'`;
                 }
 
                 //
@@ -333,7 +354,7 @@ const listVans = async function (req, res) {
     try {
         const result = await queryWithContext(req, client, async (client) => {
             return await client.query(
-                "SELECT Id, Name, LifeCycle, Failure, StartTime, EndTime, DeleteDelay, NetworkType, Connected FROM ApplicationNetworks WHERE Backbone = $1",
+                "SELECT Id, Name, VanId, LifeCycle, Failure, StartTime, EndTime, DeleteDelay, NetworkType, Connected FROM ApplicationNetworks WHERE Backbone = $1",
                 [bid]
             );
         });
@@ -355,7 +376,7 @@ const listAllVans = async function (req, res) {
     try {
         const result = await queryWithContext(req, client, async (client) => {
             return await client.query(
-                "SELECT ApplicationNetworks.Id, Backbone, Backbones.Name as backbonename, ApplicationNetworks.Name, NetworkType, " +
+                "SELECT ApplicationNetworks.Id, Backbone, Backbones.Name as backbonename, ApplicationNetworks.Name, ApplicationNetworks.VanId, NetworkType, " +
                     "ApplicationNetworks.LifeCycle, ApplicationNetworks.Failure, StartTime, EndTime, DeleteDelay, Connected " +
                     "FROM ApplicationNetworks " +
                     "JOIN Backbones ON Backbones.Id = Backbone"

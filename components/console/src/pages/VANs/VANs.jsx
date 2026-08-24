@@ -44,6 +44,7 @@ const VANs = () => {
     const [error, setError] = useState(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [vanName, setVanName] = useState("");
+    const [vanNetworkId, setVanNetworkId] = useState("");
     const [ownerGroup, setOwnerGroup] = useState("");
     const [networkType, setNetworkType] = useState("external");
     const [startDate, setStartDate] = useState(new Date());
@@ -133,6 +134,10 @@ const VANs = () => {
                 ownerGroup,
             };
 
+            if (vanNetworkId.trim()) {
+                payload.vanid = vanNetworkId.trim();
+            }
+
             // Add optional fields only for tenant VANs
             if (networkType === "tenant") {
                 // Combine start date and time
@@ -180,6 +185,7 @@ const VANs = () => {
 
             // Reset form and close modal
             setVanName("");
+            setVanNetworkId("");
             setOwnerGroup("");
             setNetworkType("external");
             setStartDate(new Date());
@@ -308,6 +314,7 @@ const VANs = () => {
 
     const headers = [
         { key: "name", header: "Name" },
+        { key: "vanid", header: "Network ID" },
         ...(selectedBackbone === "all" ? [{ key: "backbonename", header: "Backbone" }] : []),
         { key: "networktype", header: "Network Type" },
         { key: "status", header: "Status" },
@@ -342,6 +349,7 @@ const VANs = () => {
         return {
             id: van.id,
             name: van.name,
+            vanid: van.vanid,
             ...(selectedBackbone === "all" && { backbonename: van.backbonename }),
             networktype: van.networktype,
             status: status,
@@ -624,6 +632,16 @@ const VANs = () => {
                     placeholder="Enter VAN name"
                     value={vanName}
                     onChange={(e) => setVanName(e.target.value)}
+                    disabled={isCreating}
+                    style={{ marginBottom: "1rem" }}
+                />
+
+                <TextInput
+                    id="van-network-id"
+                    labelText="Network ID"
+                    placeholder="Enter network ID (optional)"
+                    value={vanNetworkId}
+                    onChange={(e) => setVanNetworkId(e.target.value)}
                     disabled={isCreating}
                     style={{ marginBottom: "1rem" }}
                 />

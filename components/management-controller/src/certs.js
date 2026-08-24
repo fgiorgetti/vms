@@ -228,7 +228,7 @@ async function onApplicationNetworksChange(action, id) {
             const van = result.rows[0];
             if (van.lifecycle == "new") {
                 Log(`New Application Network: ${van.name}`);
-                const van_id = "v" + van.id.substr(-5); // TODO - prevent collisions here
+                const van_id = van.vanid || "v" + van.id.substr(-5); // TODO - prevent collisions here
                 let duration_ms;
 
                 if (van.endtime) {
