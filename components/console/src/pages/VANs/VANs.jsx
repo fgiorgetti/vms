@@ -20,6 +20,7 @@ import {
     Button,
     Modal,
     TextInput,
+    TextArea,
     RadioButtonGroup,
     RadioButton,
     DatePicker,
@@ -31,7 +32,7 @@ import {
     Link,
     Checkbox,
 } from "@carbon/react";
-import { Add, TrashCan, Gui, Deploy } from "@carbon/icons-react";
+import { Add, TrashCan, Gui, Deploy, CopyToClipboard } from "@carbon/icons-react";
 import OwnerGroupSelect from "../../components/OwnerGroupSelect/OwnerGroupSelect";
 import { CancelWatch, CreateWatch } from "../../tools/watch";
 
@@ -70,6 +71,7 @@ const VANs = () => {
     const [vanAccessPoints, setVanAccessPoints] = useState([]);
     const [loadingAccessPoints, setLoadingAccessPoints] = useState(false);
     const [exposeNetworkObserver, setExposeNetworkObserver] = useState(false);
+    const [patchCopied, setPatchCopied] = useState(false);
 
     useEffect(() => {
         fetchBackbones();
@@ -219,11 +221,28 @@ const VANs = () => {
         window.open(`/console/${van.id}/index.html`, "_blank");
     };
 
+    const handleCopyPatch = (e) => {
+        e.stopPropagation();
+        const command = `kubectl patch site <name> -n <namespace> --type=merge -p '{"spec":{"networkId":"${vanToDeploy.vanid}"}}'`;
+        const textarea = document.createElement("textarea");
+        textarea.value = command;
+        textarea.style.position = "fixed";
+        textarea.style.opacity = "0";
+        document.body.appendChild(textarea);
+        textarea.focus();
+        textarea.select();
+        document.execCommand("copy");
+        document.body.removeChild(textarea);
+        setPatchCopied(true);
+        setTimeout(() => setPatchCopied(false), 2000);
+    };
+
     const handleDeployClick = async (van) => {
         setVanToDeploy(van);
         setDeployModalOpen(true);
         setDeploymentTarget("standalone");
         setExposeNetworkObserver(false);
+        setPatchCopied(false);
 
         // Fetch access points of type "van" from the VAN's backbone
         const backbone = van.backbone ? van.backbone : selectedBackbone;
@@ -883,16 +902,53 @@ const VANs = () => {
                 {vanToDeploy && (
                     <div style={{ marginTop: "1rem", marginBottom: "1rem" }}>
                         <h5 style={{ marginBottom: "0.5rem" }}>Download Configuration</h5>
-                        <Link
-                            href={
-                                deploymentTarget === "standalone"
-                                    ? `/api/v1alpha1/vans/${vanToDeploy.id}/config/nonconnecting`
-                                    : `/api/v1alpha1/vans/${vanToDeploy.id}/config/connecting/${deploymentTarget}${exposeNetworkObserver ? "?expose-console=true" : ""}`
-                            }
-                            download={`onboard-${vanToDeploy.name}.yaml`}
+                        <TextArea
+                            readOnly
+                            labelText="Network Id must be applied to all VAN sites"
+                            value={`kubectl patch site <name> -n <namespace> --type=merge -p '{"spec":{"networkId":"${vanToDeploy.vanid}"}}'`}
+                            rows={3}
+                            style={{ fontFamily: "monospace", fontSize: "0.8rem" }}
+                        />
+                        <div
+                            style={{
+                                display: "flex",
+                                alignItems: "center",
+                                marginTop: "0.5rem",
+                                gap: "0.5rem",
+                                flexDirection: "row-reverse",
+                            }}
                         >
-                            Download VAN configuration
-                        </Link>
+                            <Button
+                                kind="ghost"
+                                size="sm"
+                                type="button"
+                                renderIcon={CopyToClipboard}
+                                iconDescription="Copy"
+                                hasIconOnly
+                                onClick={handleCopyPatch}
+                            />
+                            {patchCopied && (
+                                <p
+                                    style={{
+                                        fontStyle: "italic",
+                                        color: "#525252",
+                                        fontSize: "0.875rem",
+                                        margin: 0,
+                                    }}
+                                >
+                                    Copied to clipboard
+                                </p>
+                            )}
+                        </div>
+                        {deploymentTarget !== "standalone" && (
+                            <Link
+                                href={`/api/v1alpha1/vans/${vanToDeploy.id}/config/connecting/${deploymentTarget}${exposeNetworkObserver ? "?expose-console=true" : ""}`}
+                                download={`onboard-${vanToDeploy.name}.yaml`}
+                                style={{ marginTop: "0.5rem", display: "inline-block" }}
+                            >
+                                Download VAN configuration
+                            </Link>
+                        )}
                     </div>
                 )}
 
