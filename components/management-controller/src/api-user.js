@@ -41,7 +41,7 @@ const createVan = async function (req, res) {
             name: { type: "dnsname", optional: false },
             nettype: { type: "dnsname", optional: false },
             ownerGroup: { type: "string", optional: true, default: "" },
-            vanid: { type: "dns-segment", optional: true, default: "" },
+            vanid: { type: "dns-segment", optional: false },
             starttime: { type: "timestampz", optional: true, default: null },
             endtime: { type: "timestampz", optional: true, default: null },
             deletedelay: { type: "interval", optional: true, default: null },
@@ -67,18 +67,16 @@ const createVan = async function (req, res) {
                 const uniqueName = UniquifyName(norm.name, existingNames);
 
                 //
-                // If a vanid was provided, verify it is unique within this backbone.
+                // Verify the vanid is unique within this backbone.
                 //
-                if (norm.vanid) {
-                    const vanIdResult = await client.query(
-                        "SELECT Id FROM ApplicationNetworks WHERE Backbone = $1 AND VanId = $2",
-                        [bid, norm.vanid]
+                const vanIdResult = await client.query(
+                    "SELECT Id FROM ApplicationNetworks WHERE Backbone = $1 AND VanId = $2",
+                    [bid, norm.vanid]
+                );
+                if (vanIdResult.rowCount > 0) {
+                    throw new Error(
+                        `Network ID '${norm.vanid}' is already in use on this backbone`
                     );
-                    if (vanIdResult.rowCount > 0) {
-                        throw new Error(
-                            `Network ID '${norm.vanid}' is already in use on this backbone`
-                        );
-                    }
                 }
 
                 let extraCols = "";
@@ -107,17 +105,12 @@ const createVan = async function (req, res) {
                     extraVals += `, '${norm.ownerGroup}'`;
                 }
 
-                if (norm.vanid) {
-                    extraCols += ", VanId";
-                    extraVals += `, '${norm.vanid}'`;
-                }
-
                 //
                 // Create the application network
                 //
                 const result = await client.query(
-                    `INSERT INTO ApplicationNetworks(Name, NetworkType, Backbone${extraCols}, Owner) VALUES ($1, $2, $3${extraVals}, $4) RETURNING Id`,
-                    [uniqueName, norm.nettype, bid, userInfo.userId]
+                    `INSERT INTO ApplicationNetworks(Name, NetworkType, Backbone, VanId${extraCols}, Owner) VALUES ($1, $2, $3, $4${extraVals}, $5) RETURNING Id`,
+                    [uniqueName, norm.nettype, bid, norm.vanid, userInfo.userId]
                 );
                 const vanId = result.rows[0].id;
                 notify.add("ApplicationNetworks", vanId);

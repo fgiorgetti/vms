@@ -83,9 +83,7 @@ export function BackboneSite(name, _siteId, networkId) {
         },
         spec: {
             linkAccess: "none",
-            settings: {
-                networkId: networkId,
-            },
+            networkId: networkId,
         },
     };
 }
@@ -122,10 +120,9 @@ export function NetworkLinkCR(host, port, secret, exposedKeys) {
             tlsCredentials: secret,
         },
     };
-    if (exposedKeys) {
-        networkLink.spec["settings"] = {
-            routingKeys: exposedKeys,
-        };
+    let keys = [].concat(exposedKeys);
+    if (keys.length > 0) {
+        networkLink.spec.routingKeys = keys;
     }
     return networkLink;
 }

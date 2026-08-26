@@ -56,7 +56,7 @@ describe("resource-templates", () => {
         expect(site.kind).toBe("Site");
         expect(site.metadata.name).toBe("backbone-a");
         expect(site.spec.linkAccess).toBe("none");
-        expect(site.spec.settings["networkId"]).toBe("mbone");
+        expect(site.spec.networkId).toBe("mbone");
     });
 
     it("NetworkLinkCR parses port as integer", () => {

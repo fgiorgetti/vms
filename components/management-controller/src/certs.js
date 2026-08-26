@@ -228,7 +228,6 @@ async function onApplicationNetworksChange(action, id) {
             const van = result.rows[0];
             if (van.lifecycle == "new") {
                 Log(`New Application Network: ${van.name}`);
-                const van_id = van.vanid || "v" + van.id.substr(-5); // TODO - prevent collisions here
                 let duration_ms;
 
                 if (van.endtime) {
@@ -247,8 +246,8 @@ async function onApplicationNetworksChange(action, id) {
                 );
                 notify.add("CertificateRequests", cert.rows[0].id);
                 await client.query(
-                    "UPDATE ApplicationNetworks SET Lifecycle = 'vms_cr_created', VanId = $1 WHERE Id = $2",
-                    [van_id, van.id]
+                    "UPDATE ApplicationNetworks SET Lifecycle = 'vms_cr_created' WHERE Id = $1",
+                    [van.id]
                 );
                 notify.update("ApplicationNetworks", van.id);
             } else if (van.lifecycle == "ready") {
